@@ -1,6 +1,6 @@
 
 from sqlalchemy import Column, Integer, String, Float
-from models.user import Base  # reuse declarative_base()
+from . import Base  # reuse declarative_base()
 
 
 class SubscriptionPlan(Base):

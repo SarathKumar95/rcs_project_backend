@@ -3,20 +3,19 @@ from logging.config import fileConfig
 
 from sqlalchemy import create_engine, pool
 from alembic import context
-from dotenv import load_dotenv
 
-from models.user import Base
+from models import Base
+from models.user import User
+from models.subscriptions import SubscriptionPlan
 
-# === Load environment variables early ===
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
-if not load_dotenv(dotenv_path):
-    raise FileNotFoundError(f".env file not found at {dotenv_path}")
-
-# === Get the database URL ===
-database_url = os.getenv("DATABASE_URL")
+# === Get the database URL directly from the environment ===
+database_url = os.getenv("DATABASE_URL")  # No need to load .env manually
 if not database_url:
     raise ValueError("DATABASE_URL is not set in the environment variables.")
+else:
+    print(f"Using database URL: {database_url}")  # Log to ensure it’s correct
 
+    
 # === Alembic Config ===
 config = context.config
 
