@@ -1,6 +1,6 @@
 
-
-from fastapi import Depends, APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException, Response
+from fastapi.responses import JSONResponse
 from app.models.user import User
 from app.services.auth_service import create_access_token,hash_password  # Auth functions
 from sqlalchemy.orm import Session
@@ -24,7 +24,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     
     try:
         hashed_pw = hash_password(user.password)
-        new_user = User(email=user.email,password=hashed_pw)
+        new_user = User(email=user.email, password=hashed_pw)
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
@@ -35,4 +35,17 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Registration failed. Please try again later.")
 
     token = create_access_token(data={"sub": str(new_user.id)})
-    return {"access_token": token}
+    
+    # Return response with the token and set the cookie
+    response = JSONResponse(content={"access_token": token})
+    response.set_cookie(
+        key="access_token", 
+        value=token, 
+        httponly=True, 
+        max_age=60*60*24*7,  # Set to 7 days or your desired duration
+        expires=60*60*24*7,   # Same duration as max_age
+        secure=True,  # Use HTTPS in production
+        samesite="Strict"
+    )
+
+    return response
