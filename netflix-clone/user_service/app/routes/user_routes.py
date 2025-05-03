@@ -1,61 +1,38 @@
+
+
 from fastapi import Depends, APIRouter, HTTPException
-from pydantic import BaseModel
-from models.user import User
-from services.auth_service import create_access_token, verify_password  # Auth functions
+from app.models.user import User
+from app.services.auth_service import create_access_token,hash_password  # Auth functions
 from sqlalchemy.orm import Session
-from db.session import get_db  # Your database session dependency
-from typing import List
-from schemas.user import UserOut  # <-- import the schema
-
-router = APIRouter()
-
-
-# Pydantic schema for register request
-class RegisterRequest(BaseModel):
-    email: str
-    password: str
-    role: str
+from app.db.session import get_db  
+from app.schemas.user import UserCreate,Token
+from sqlalchemy.exc import SQLAlchemyError
+from core.logger import logger
 
 
-# Pydantic schema for login request
-class LoginRequest(BaseModel):
-    email: str
-    password: str
+
 
 
 router = APIRouter()
 
 
-@router.get("/users", response_model=List[UserOut])
-def get_users(db: Session = Depends(get_db)):
-    return db.query(User).all()
+@router.post("/", response_model=Token)
+def register(user: UserCreate, db: Session = Depends(get_db)):
+    existing_user = db.query(User).filter(User.email == user.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    try:
+        hashed_pw = hash_password(user.password)
+        new_user = User(email=user.email, hashed_password=hashed_pw)
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
 
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"DB Error during registration: {str(e)}")
+        raise HTTPException(status_code=500, detail="Registration failed. Please try again later.")
 
-@router.post("/register", response_model=RegisterRequest)
-async def register(request: RegisterRequest, db: Session = Depends(get_db)):
-    """
-    Register new user in the system.
-    """
-    user = user_model.User(
-        email=request.email,
-        password=hash_password(request.password),  # Ensure you hash the password
-        role=request.role
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
-
-
-@router.post("/login")
-async def login(request: LoginRequest, db: Session = Depends(get_db)):
-    """
-    User login and JWT token generation.
-    """
-    user = db.query(user_model.User).filter(user_model.User.email == request.email).first()
-    if not user or not verify_password(request.password, user.password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
-
+    token = create_access_token(data={"sub": str(new_user.id)})
+    return {"access_token": token}

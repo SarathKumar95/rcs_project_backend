@@ -20,6 +20,9 @@ services:
       - DATABASE_URL=postgresql://${PSQL_USER}:${PSQL_PASSWORD}@db:5432/${USER_DB}
     depends_on:
       - db
+    volumes:
+      - ./user_service:/app 
+      - ./core:/app/core
 
 
 
@@ -65,3 +68,4 @@ services:
 volumes:
   user_data:
   redis_data:
+
