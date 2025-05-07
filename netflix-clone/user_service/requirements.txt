@@ -9,4 +9,4 @@ psycopg2-binary==2.9.
 passlib==1.7.4
 python-jose==3.4.0
 pydantic[email]
-
+python-multipart==0.0.20

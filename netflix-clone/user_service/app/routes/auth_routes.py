@@ -1,0 +1,31 @@
+from fastapi import APIRouter, Depends, HTTPException, status, Response
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.security import OAuth2PasswordRequestForm
+from app.models.user import User
+from app.utility.auth_utility import set_auth_cookies , create_access_token, verify_password, hash_password
+from app.db.session import get_async_db
+from sqlalchemy import select
+
+router = APIRouter()
+
+@router.post("/")
+async def login(
+    response: Response,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_async_db)
+
+):
+
+    result = await db.execute(select(User).filter(User.email == form_data.username))
+
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    
+    if not verify_password(form_data.password, user.password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    access_token = create_access_token(data={"sub": str(user.id)})
+    set_auth_cookies(response, access_token)
+    return {"message": "Login successful"}
