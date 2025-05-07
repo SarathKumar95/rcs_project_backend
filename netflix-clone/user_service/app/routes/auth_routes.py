@@ -24,7 +24,7 @@ async def login(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     
     if not verify_password(form_data.password, user.password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid credentials")
 
     access_token = create_access_token(data={"sub": str(user.id)})
     set_auth_cookies(response, access_token)
