@@ -29,3 +29,9 @@ async def login(
     access_token = create_access_token(data={"sub": str(user.id)})
     set_auth_cookies(response, access_token)
     return {"message": "Login successful"}
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie(key="access_token")
+    return {"message": "Logout successful"}
