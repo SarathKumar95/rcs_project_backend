@@ -1,7 +1,9 @@
+import os
+from fastapi import Response
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
-import os
+
 
 
 SECRET_KEY=os.getenv("SECRET_KEY")  # Use a secure secret key
@@ -23,3 +25,15 @@ def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+
+
+def set_auth_cookies(response: Response, access_token: str):
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,            # Set to False only in dev
+        samesite="Lax",
+        max_age=60 * 60 * 24 * 7  # 7 days
+    )

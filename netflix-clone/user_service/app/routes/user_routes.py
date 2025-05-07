@@ -1,51 +1,45 @@
 
 from fastapi import Depends, APIRouter, HTTPException, Response
-from fastapi.responses import JSONResponse
 from app.models.user import User
 from app.services.auth_service import create_access_token,hash_password  # Auth functions
-from sqlalchemy.orm import Session
-from app.db.session import get_db  
-from app.schemas.user import UserCreate,Token
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.session import get_async_db
+from app.schemas.user import UserCreate
 from sqlalchemy.exc import SQLAlchemyError
 from core.logger import logger
-
-
-
-
+from app.services.auth_service import set_auth_cookies
+from sqlalchemy import select
+from app.services.user_service import *
 
 router = APIRouter()
 
 
-@router.post("/", response_model=Token)
-def register(user: UserCreate, db: Session = Depends(get_db)):
-    existing_user = db.query(User).filter(User.email == user.email).first()
+
+
+@router.post("/")
+async def register(
+    response: Response,
+    user: UserCreate,
+    db: AsyncSession = Depends(get_async_db)  # Make sure get_async_db returns AsyncSession
+):
+
+    # Check if user already exists
+    result = await db.execute(select(User).filter(User.email == user.email))
+    existing_user = result.scalar_one_or_none()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
     try:
+        # Hash password (you can also make hash_password async if needed)
         hashed_pw = hash_password(user.password)
-        new_user = User(email=user.email, password=hashed_pw)
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
+        new_user = await create_user(db, user.email, hashed_pw)
 
     except SQLAlchemyError as e:
-        db.rollback()
+        await db.rollback()
         logger.error(f"DB Error during registration: {str(e)}")
         raise HTTPException(status_code=500, detail="Registration failed. Please try again later.")
 
-    token = create_access_token(data={"sub": str(new_user.id)})
-    
-    # Return response with the token and set the cookie
-    response = JSONResponse(content={"access_token": token})
-    response.set_cookie(
-        key="access_token", 
-        value=token, 
-        httponly=True, 
-        max_age=60*60*24*7,  # Set to 7 days or your desired duration
-        expires=60*60*24*7,   # Same duration as max_age
-        secure=True,  # Use HTTPS in production
-        samesite="Strict"
-    )
+    access_token = create_access_token(data={"sub": str(new_user.id)})
+    set_auth_cookies(response, access_token)
 
-    return response
+    return {"message": "Success"}

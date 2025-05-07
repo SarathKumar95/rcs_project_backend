@@ -17,7 +17,7 @@ services:
     ports:
       - "${USER_SERVICE_PORT}:8000"
     environment:
-      - DATABASE_URL=postgresql://${PSQL_USER}:${PSQL_PASSWORD}@db:5432/${USER_DB}
+      - DATABASE_URL=postgresql+asyncpg://${PSQL_USER}:${PSQL_PASSWORD}@db:5432/${USER_DB}
     depends_on:
       - db
     volumes:
