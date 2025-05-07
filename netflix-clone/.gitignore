@@ -1,1 +1,64 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+*.pyo
+
+# Virtual environments
+env/
+venv/
+ENV/
+.venv/
+*.egg-info/
+.eggs/
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# MacOS + Windows system files
+.DS_Store
+Thumbs.db
+
+# Testing / coverage
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+test-results/
+
+# MyPy, Pylint, etc
+.mypy_cache/
+.pytest_cache/
+.pyre/
+
+# Logs & dumps
+*.log
+*.pot
+*.mo
+*.pid
+*.gz
+*.zip
+*.out
+
+# Environment files
 .env
+.env.*
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Docker
+**/__pycache__/
+.dockerignore
+docker-compose.override.yml
+
+# VS Code settings (optional, if project-specific)
+.vscode/settings.json
