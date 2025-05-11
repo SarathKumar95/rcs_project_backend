@@ -26,7 +26,7 @@ async def login(
     if not verify_password(form_data.password, user.password):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid credentials")
 
-    access_token = create_access_token(data={"sub": str(user.id)})
+    access_token = create_access_token(user)
     set_auth_cookies(response, access_token)
     return {"message": "Login successful"}
 

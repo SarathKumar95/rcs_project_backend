@@ -3,12 +3,13 @@ from fastapi import Depends, APIRouter, HTTPException, Response
 from app.models.user import User
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_async_db
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserOut
 from sqlalchemy.exc import SQLAlchemyError
 from core.logger import logger
 from app.utility.auth_utility import set_auth_cookies , create_access_token,hash_password 
 from sqlalchemy import select
 from app.utility.user_utility import *
+from app.utility.auth_utility import get_current_user
 
 router = APIRouter()
 
@@ -38,7 +39,20 @@ async def register(
         logger.error(f"DB Error during registration: {str(e)}")
         raise HTTPException(status_code=500, detail="Registration failed. Please try again later.")
 
-    access_token = create_access_token(data={"sub": str(new_user.id)})
+    access_token = create_access_token(new_user)
     set_auth_cookies(response, access_token)
 
     return {"message": "Success"}
+
+
+
+@router.get("/", response_model=UserOut)
+async def get_current_user_info(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_db)
+):
+    result = await db.execute(select(User).where(User.id == current_user.id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
