@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 router = APIRouter()
 
-@router.post("/")
+@router.post("/login")
 async def login(
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),

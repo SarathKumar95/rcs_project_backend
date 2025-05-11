@@ -1,5 +1,5 @@
 
-from fastapi import Depends, APIRouter, HTTPException, Response
+from fastapi import Depends, APIRouter, HTTPException, Response, Request
 from app.models.user import User
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_async_db
@@ -9,7 +9,7 @@ from core.logger import logger
 from app.utility.auth_utility import set_auth_cookies , create_access_token,hash_password 
 from sqlalchemy import select
 from app.utility.user_utility import *
-from app.utility.auth_utility import get_current_user
+
 
 router = APIRouter()
 
@@ -46,13 +46,20 @@ async def register(
 
 
 
-@router.get("/", response_model=UserOut)
-async def get_current_user_info(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_async_db)
-):
-    result = await db.execute(select(User).where(User.id == current_user.id))
+@router.get("/",response_model=UserOut)
+async def get_current_user(request: Request, db: AsyncSession = Depends(get_async_db)):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=403, detail="No Token found")
+
+    payload = decode_access_token(token)
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
+
+    result = await db.execute(select(User).where(User.id == int(user_id)))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
     return user
