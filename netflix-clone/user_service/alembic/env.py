@@ -1,12 +1,17 @@
+import sys
 import os
 from logging.config import fileConfig
+
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from sqlalchemy import create_engine, pool
 from alembic import context
 
-from models import Base
-from models.user import User
-from models.subscriptions import SubscriptionPlan
+from app.models import Base
+from app.models.user import User
+from app.models.subscriptions import SubscriptionPlan
+
 
 # === Get the database URL directly from the environment ===
 database_url = os.getenv("DATABASE_URL")  # No need to load .env manually

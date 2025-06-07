@@ -62,4 +62,8 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_asyn
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return user
+    return UserOut(
+        id=user.id,
+        email=user.email,
+        role=user.role_name
+    )
