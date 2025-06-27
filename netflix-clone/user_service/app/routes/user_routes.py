@@ -34,6 +34,7 @@ async def register(
         hashed_pw = hash_password(user.password)
         new_user = await create_user(db, user.email, hashed_pw)
 
+
     except SQLAlchemyError as e:
         await db.rollback()
         logger.error(f"DB Error during registration: {str(e)}")
