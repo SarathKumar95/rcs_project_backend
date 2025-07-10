@@ -87,15 +87,15 @@ services:
       - "${VIDEO_UPLOAD_SERVICE_PORT}:8002"
     volumes:
       - ./video_upload_service:/app  # Disable on production
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
     depends_on:
       - minio
     environment:
-      MINIO_ENDPOINT: ${MINIO_INTERNAL_ENDPOINT}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME}
+      AWS_REGION : ${AWS_REGION}
+    
 
 volumes:
   user_data:
