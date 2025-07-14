@@ -9,6 +9,7 @@ services:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - user_service
+      - video_upload
 
   user_service:
     build: ./user_service
@@ -83,8 +84,8 @@ services:
       context: ./video_upload_service
     env_file:
       - .env
-    ports:
-      - "${VIDEO_UPLOAD_SERVICE_PORT}:8002"
+    # ports:
+    #   - "${VIDEO_UPLOAD_SERVICE_PORT}:8002"
     volumes:
       - ./video_upload_service:/app  # Disable on production
     depends_on:
