@@ -1,60 +1,54 @@
+# s3_client.py (under app/deps/)
 import boto3
 import os
 from urllib.parse import urlparse, urlunparse
-from dotenv import load_dotenv
 
-load_dotenv()
 
-# ENV
-endpoint = os.getenv("MINIO_ENDPOINT")               # internal Docker DNS
-public_url = os.getenv("MINIO_PUBLIC_URL")           # what React/browser will use
-access_key = os.getenv("MINIO_ACCESS_KEY")
-secret_key = os.getenv("MINIO_SECRET_KEY")
-bucket = os.getenv("MINIO_BUCKET_NAME")
-region = os.getenv("AWS_REGION")
+MINIO_INTERNAL_ENDPOINT = os.getenv("MINIO_ENDPOINT")
+MINIO_PUBLIC_ENDPOINT = os.getenv("MINIO_PUBLIC_URL")
+BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME")
 
-# Parse internal MinIO endpoint
-parsed_internal = urlparse(endpoint)
-internal_host = parsed_internal.netloc
-parsed_public = urlparse(public_url)
-public_host = parsed_public.netloc
-
-# Setup boto3
 s3 = boto3.client(
     "s3",
-    endpoint_url=f"{parsed_internal.scheme}://{internal_host}",
-    aws_access_key_id=access_key,
-    aws_secret_access_key=secret_key,
-    region_name=region,
+    endpoint_url=MINIO_PUBLIC_ENDPOINT,
+    aws_access_key_id=os.getenv("MINIO_ACCESS_KEY"),
+    aws_secret_access_key=os.getenv("MINIO_SECRET_KEY"),
+    region_name=os.getenv("AWS_REGION"),
+    config=boto3.session.Config(signature_version="s3v4"),
 )
 
-def ensure_bucket():
-    buckets = s3.list_buckets()["Buckets"]
-    if not any(b["Name"] == bucket for b in buckets):
-        s3.create_bucket(Bucket=bucket)
+internal_s3 = boto3.client(
+    "s3",
+    endpoint_url=MINIO_INTERNAL_ENDPOINT,  # ← minio:9000
+    aws_access_key_id=os.getenv("MINIO_ACCESS_KEY"),
+    aws_secret_access_key=os.getenv("MINIO_SECRET_KEY"),
+    region_name=os.getenv("AWS_REGION"),
+    config=boto3.session.Config(signature_version="s3v4"),
+)
 
-# Used by React client
-def get_presigned_upload_url(object_key: str, expires_in=1800) -> str:
-    ensure_bucket()
+BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME")
 
-    signed_url = s3.generate_presigned_url(
-        "put_object",
-        Params={"Bucket": bucket, "Key": object_key},
-        ExpiresIn=expires_in
+def initiate_multipart_upload(key: str):
+    response = internal_s3.create_multipart_upload(Bucket=BUCKET_NAME, Key=key)
+    return response["UploadId"]
+
+def get_presigned_part_url(key: str, upload_id: str, part_number: int):
+    return s3.generate_presigned_url(
+        "upload_part",
+        Params={
+            "Bucket": BUCKET_NAME,
+            "Key": key,
+            "UploadId": upload_id,
+            "PartNumber": part_number
+        },
+        ExpiresIn=1800
     )
 
-    parsed_url = urlparse(signed_url)
-    if internal_host in parsed_url.netloc:
-        # swap internal Docker hostname with external/public one
-        signed_url = urlunparse(parsed_url._replace(netloc=public_host))
 
-    return signed_url
-
-# Internal use — use inside backend only if ever needed
-def get_internal_presigned_url(object_key: str, expires_in=1800) -> str:
-    ensure_bucket()
-    return s3.generate_presigned_url(
-        "put_object",
-        Params={"Bucket": bucket, "Key": object_key},
-        ExpiresIn=expires_in
+def complete_multipart_upload(key: str, upload_id: str, parts: list):
+    return internal_s3.complete_multipart_upload(
+        Bucket=BUCKET_NAME,
+        Key=key,
+        UploadId=upload_id,
+        MultipartUpload={"Parts": parts}
     )

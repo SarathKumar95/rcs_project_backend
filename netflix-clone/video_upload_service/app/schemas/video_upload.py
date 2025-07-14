@@ -1,5 +1,22 @@
+from typing import List
 from pydantic import BaseModel
 
-class UploadChunkRequest(BaseModel):
+
+class InitiateUploadRequest(BaseModel):
+    filename: str
+
+
+class GetUploadUrlRequest(BaseModel):
+    key: str
     upload_id: str
-    chunk_index: int
+    part_number: int
+
+
+class Part(BaseModel):
+    ETag: str
+    PartNumber: int
+
+class CompleteUploadRequest(BaseModel):
+    key: str
+    upload_id: str
+    parts: List[Part]
