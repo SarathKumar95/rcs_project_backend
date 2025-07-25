@@ -1,11 +1,13 @@
+
 import uuid
 import enum
 from sqlalchemy import (
     Column, String, Text, Enum, TIMESTAMP, JSON, ForeignKey, Integer, ARRAY, Boolean, DateTime
 )
+
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
-from app.database import Base
+from . import Base
 
 class UploadStatusEnum(enum.IntEnum):
     pending = 0
@@ -41,4 +43,3 @@ class Video(Base):
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
-    
