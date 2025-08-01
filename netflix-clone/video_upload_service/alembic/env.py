@@ -11,11 +11,12 @@ from app.models import Base
 from app.models.videos import Video 
 
 # === Get the database URL directly from the environment ===
-database_url = os.getenv("DATABASE_URL")  # No need to load .env manually
+database_url = os.getenv("VIDEO_DATABASE_URL")  # No need to load .env manually
 if not database_url:
-    raise ValueError("DATABASE_URL is not set in the environment variables.")
+    raise ValueError("VIDEO_DATABASE_URL is not set in the environment variables.")
 else:
     print(f"Using database URL: {database_url}")  # Log to ensure it’s correct
+    context.config.set_main_option("sqlalchemy.url", database_url)  # ✅ this is the fix!
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -26,11 +27,8 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = None
+
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

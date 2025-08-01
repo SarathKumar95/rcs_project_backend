@@ -25,7 +25,7 @@ class Video(Base):
     original_file_path = Column(Text, nullable=False)
     hls_path = Column(Text, nullable=True)
 
-    upload_status = Column(Enum(UploadStatusEnum), default="pending", nullable=False)
+    upload_status = Column(Integer, default=UploadStatusEnum.pending.value, nullable=False)
     resolutions = Column(JSON, nullable=True)  # example: {"720p": "path/to.m3u8", ...}
 
     default_thumbnail = Column(Text, nullable=True)
