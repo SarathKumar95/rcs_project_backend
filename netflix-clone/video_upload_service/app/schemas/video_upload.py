@@ -25,6 +25,7 @@ class VideoCreate(BaseModel):
     title: str
     description: str 
     file_path: str  
+    created_by : int 
 
 
 # class VideoUpdate(BaseModel):

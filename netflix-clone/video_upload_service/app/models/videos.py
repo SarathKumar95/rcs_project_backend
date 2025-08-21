@@ -32,7 +32,7 @@ class Video(Base):
     custom_thumbnail = Column(Text, nullable=True)
 
     duration = Column(Integer, nullable=True)  # seconds
-    created_by = Column(UUID(as_uuid=True), nullable=False)  # User ID from user service
+    created_by = Column(Integer, nullable=False)
     cast = Column(ARRAY(Text), nullable=True)  # ["actor1", "actor2"]
 
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())

@@ -11,11 +11,11 @@ from app.models import Base
 from app.models.videos import Video 
 
 # === Get the database URL directly from the environment ===
-database_url = os.getenv("VIDEO_DATABASE_URL")  # No need to load .env manually
+database_url = os.getenv("SYNC_DATABASE_URL")  # No need to load .env manually
 if not database_url:
-    raise ValueError("VIDEO_DATABASE_URL is not set in the environment variables.")
+    raise ValueError("SYNC_DATABASE_URL is not set in the environment variables.")
 else:
-    print(f"Using database URL: {database_url}")  # Log to ensure it’s correct
+    #print(f"Using database URL: {database_url}")  # Log to ensure it’s correct
     context.config.set_main_option("sqlalchemy.url", database_url)  # ✅ this is the fix!
 
 # this is the Alembic Config object, which provides

@@ -63,3 +63,10 @@ docker-compose.override.yml
 
 # VS Code settings (optional, if project-specific)
 .vscode/settings.json
+
+
+# Ignore MinIO storage artifacts
+*.meta
+*.xl.json
+*.part.*
+minio_data/
