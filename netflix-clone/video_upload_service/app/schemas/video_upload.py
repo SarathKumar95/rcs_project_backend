@@ -20,3 +20,16 @@ class CompleteUploadRequest(BaseModel):
     key: str
     upload_id: str
     parts: List[Part]
+
+class VideoCreate(BaseModel):
+    title: str
+    description: str 
+    file_path: str  
+
+
+# class VideoUpdate(BaseModel):
+#     title: str | None = None
+#     description: str | None = None
+#     file_path: str | None = None
+#     status: str | None = None
+

@@ -4,7 +4,7 @@ import os
 from typing import AsyncGenerator
 
 
-DATABASE_URL = os.environ["DATABASE_URL"]  # assume Docker is setting this
+DATABASE_URL = os.environ["VIDEO_DATABASE_URL"]  # assume Docker is setting this
 
 engine =  create_async_engine(DATABASE_URL, echo=True)
 # Create async session factory

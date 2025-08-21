@@ -1,13 +1,13 @@
 # service functions for video management
 
 from typing import Optional
-from app.models.videos import Video
+from app.models.videos import Video, UploadStatusEnum
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_async_db
 from sqlalchemy import select
 
 
-from app.schemas.video_upload import VideoCreate, VideoUpdate
+from app.schemas.video_upload import VideoCreate
 
 
 # create a new video entry
@@ -16,8 +16,8 @@ async def create_video(video_data: VideoCreate, db: AsyncSession):
         new_video = Video(
             title=video_data.title,
             description=video_data.description,
-            file_path=video_data.file_path,
-            status="uploaded",
+            original_file_path=video_data.file_path,
+            upload_status=UploadStatusEnum.pending.value,
         )
         db.add(new_video)
         await db.commit()

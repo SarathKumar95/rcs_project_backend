@@ -84,8 +84,8 @@ services:
       context: ./video_upload_service
     env_file:
       - .env
-    # ports:
-    #   - "${VIDEO_UPLOAD_SERVICE_PORT}:8002"
+    ports:
+      - "${VIDEO_UPLOAD_SERVICE_PORT}:8002"
     volumes:
       - ./video_upload_service:/app  # Disable on production
     depends_on:

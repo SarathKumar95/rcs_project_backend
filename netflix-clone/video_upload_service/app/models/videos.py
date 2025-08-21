@@ -10,10 +10,10 @@ from sqlalchemy.sql import func
 from . import Base
 
 class UploadStatusEnum(enum.IntEnum):
-    pending = 0
-    processing = 1
-    ready = 2
-    failed = 3
+    pending = 0 # uploaded successfully, but not processed yet
+    processing = 1 # currently being processed (e.g., transcoding)
+    ready = 2 # processed and ready for playback
+    failed = 3 # processing failed, needs manual intervention
 
 class Video(Base):
     __tablename__ = "videos"
