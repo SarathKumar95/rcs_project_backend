@@ -36,15 +36,20 @@ async def complete_upload(payload: CompleteUploadRequest, db: AsyncSession = Dep
         result = complete_multipart_upload(
             payload.key,
             payload.upload_id,
-            [part.dict() for part in payload.parts]  # boto3 needs list of dicts
+            [part.dict() for part in payload.parts],
         )
+
+        title = payload.key.split('/')[-1]
+
+        print(f"title is {title}")
 
         # create a new video entry in the database
         new_video_entry = await create_video(
             VideoCreate(
                 title=payload.key.split('/')[-1],  # use filename as title
                 description="",
-                file_path=f"{BUCKET_NAME}/{payload.key}"
+                file_path=f"{BUCKET_NAME}/{payload.key}",
+                created_by=payload.created_by
             ),
             db 
         )
@@ -62,3 +67,12 @@ async def complete_upload(payload: CompleteUploadRequest, db: AsyncSession = Dep
         # Log the error or handle it as needed
         print(f"Error completing upload: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# @router.put("/{video_id}/status")
+# async def update_status(payload : VideoUpdate, db: AsyncSession = Depends(get_async_db)):
+#     """
+#     Update the status of a video (e.g., 'processing', 'ready', 'failed').
+#     """
+#     result = await update_video_status(video_id, status, db)
+#     return result

@@ -18,6 +18,7 @@ async def create_video(video_data: VideoCreate, db: AsyncSession):
             description=video_data.description,
             original_file_path=video_data.file_path,
             upload_status=UploadStatusEnum.pending.value,
+            created_by=video_data.created_by
         )
         db.add(new_video)
         await db.commit()
