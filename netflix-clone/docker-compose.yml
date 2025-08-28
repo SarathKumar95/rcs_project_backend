@@ -90,12 +90,14 @@ services:
       - ./video_upload_service:/app  # Disable on production
     depends_on:
       - minio
+      - db
     environment:
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME}
       AWS_REGION : ${AWS_REGION}
+      SYNC_DATABASE_URL : postgresql+psycopg2://${PSQL_USER}:${PSQL_PASSWORD}@db:5432/${VIDEOS_DB}
     
 
 volumes:

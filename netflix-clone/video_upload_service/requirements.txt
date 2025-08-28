@@ -9,3 +9,4 @@ sqlalchemy[asyncio]
 asyncpg==0.30.0
 psycopg2-binary==2.9.0
 boto3==1.39.3
+psycopg2==2.9.10
