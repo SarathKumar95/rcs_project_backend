@@ -39,10 +39,6 @@ async def complete_upload(payload: CompleteUploadRequest, db: AsyncSession = Dep
             [part.dict() for part in payload.parts],
         )
 
-        title = payload.key.split('/')[-1]
-
-        print(f"title is {title}")
-
         # create a new video entry in the database
         new_video_entry = await create_video(
             VideoCreate(

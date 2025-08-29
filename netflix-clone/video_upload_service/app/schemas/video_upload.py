@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional, Dict
 from pydantic import BaseModel
 
 
@@ -29,11 +29,12 @@ class VideoCreate(BaseModel):
     created_by : int 
     
 
-
-# class VideoUpdate(BaseModel):
-#     title: str | None = None
-#     description: str | None = None
-#     file_path: str | None = None
-#     status: str | None = None
+class Post_Transcode_Update(BaseModel):
+    hls_path: Optional[str] = None
+    upload_status: Optional[int] = None
+    resolutions: Optional[Dict[str, str]] = None
+    
+    class Config:
+        orm_mode = True
 
 
