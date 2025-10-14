@@ -6,10 +6,14 @@ from app.deps.s3_client import (
 )
 from app.schemas.video_upload import *
 from app.utility.videos_db import create_video, update_video_status
-from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_async_db
-
 from app.deps.s3_client import BUCKET_NAME
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from core.redis_stream import RedisStreamClient
+
+
+redis_client = RedisStreamClient()
 
 router = APIRouter()
 
@@ -52,6 +56,21 @@ async def complete_upload(payload: CompleteUploadRequest, db: AsyncSession = Dep
 
         # if create_video returns a success response, update the video status
         if new_video_entry["success"]:
+            # print(f"Created new video entry with ID: {new_video_entry['video_id']} and result are {result}")
+
+            event = {
+                "event": "video_uploaded",
+                "video_id": str(new_video_entry['video_id']),
+                "location": result["Location"],
+                "bucket": result["Bucket"],
+                "key": result["Key"],
+                "status": "uploaded"
+            }
+
+            redis_client.publish(event)
+
+            print(f"Published event to Redis for video ID: {new_video_entry['video_id']}")
+
             return {"message": "Upload complete", "result": result}
     
         else:

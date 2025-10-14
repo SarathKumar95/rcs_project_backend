@@ -84,20 +84,25 @@ services:
       context: ./video_upload_service
     env_file:
       - .env
+    working_dir: /app/video_upload_service
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
     ports:
       - "${VIDEO_UPLOAD_SERVICE_PORT}:8002"
     volumes:
-      - ./video_upload_service:/app  # Disable on production
+      - .:/app  
     depends_on:
       - minio
       - db
     environment:
+      PYTHONPATH : /app
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME}
       AWS_REGION : ${AWS_REGION}
       SYNC_DATABASE_URL : postgresql+psycopg2://${PSQL_USER}:${PSQL_PASSWORD}@db:5432/${VIDEOS_DB}
+      REDIS_HOST : ${REDIS_HOST}
+      REDIS_PORT : ${REDIS_PORT}
     
 
 volumes:
