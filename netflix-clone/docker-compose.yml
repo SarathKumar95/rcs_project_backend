@@ -103,7 +103,27 @@ services:
       SYNC_DATABASE_URL : postgresql+psycopg2://${PSQL_USER}:${PSQL_PASSWORD}@db:5432/${VIDEOS_DB}
       REDIS_HOST : ${REDIS_HOST}
       REDIS_PORT : ${REDIS_PORT}
-    
+  
+
+  video_transcoding:
+    build:
+      context: .
+      dockerfile: ./video_transcoding_service/Dockerfile
+    command: python -m app.worker
+    working_dir: /app
+    restart: always
+    volumes:
+      - ./video_transcoding_service/app:/app/app        # service code
+      - ./core:/app/core                                # shared code
+      - ./logs:/app/logs                                # persistent logs
+      - /var/run/docker.sock:/var/run/docker.sock       # allow container spawning
+    environment:
+      LOG_DIR: /app/logs
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - redis
+
 
 volumes:
   user_data:
