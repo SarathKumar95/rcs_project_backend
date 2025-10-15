@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_async_db
 from app.schemas.user import UserCreate, UserOut
 from sqlalchemy.exc import SQLAlchemyError
-from core.logger import logger
+from core.logger import get_logger
 from app.utility.auth_utility import set_auth_cookies , create_access_token,hash_password 
 from sqlalchemy import select
 from app.utility.user_utility import *
@@ -13,7 +13,7 @@ from app.utility.user_utility import *
 
 router = APIRouter()
 
-
+logger = get_logger("user_service")
 
 
 @router.post("/")
