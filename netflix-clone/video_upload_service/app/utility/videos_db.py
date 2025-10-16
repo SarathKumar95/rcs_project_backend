@@ -3,6 +3,7 @@
 from typing import Optional
 from app.models.videos import Video, UploadStatusEnum
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 
 
@@ -56,15 +57,26 @@ async def get_video_by_id(video_id: int, db: AsyncSession):
 
 async def list_videos(db: AsyncSession, user_id: Optional[int] = None):
     try:
-        query = db.query(Video)
+        stmt = select(Video)
         if user_id:
-            query = query.filter(Video.user_id == user_id)
-        videos = await query.all()
-        return {"success": True, "videos": videos, "message": "Videos fetched successfully"}
+            stmt = stmt.where(Video.user_id == user_id)
+
+        result = await db.execute(stmt)
+        videos = result.scalars().all()  # Extract ORM objects
+
+        return {
+            "success": True,
+            "videos": videos,
+            "message": "Videos fetched successfully"
+        }
 
     except Exception as e:
         print(f"Error listing videos: {e}")
-        return {"success": False, "videos": [], "message": str(e)}
+        return {
+            "success": False,
+            "videos": [],
+            "message": str(e)
+        }
 
 
 # update video status

@@ -106,3 +106,13 @@ async def update_video_record_API(payload: Update_Video_Record, db: AsyncSession
         return {"message": "Video status updated successfully"}
     else:
         raise HTTPException(status_code=404, detail=update_result["message"])
+    
+
+@router.get("/", summary="List all videos in the database")
+async def get_all_videos(db: AsyncSession = Depends(get_async_db)):
+    from app.utility.videos_db import list_videos
+    result = await list_videos(db)
+    if result["success"]:
+        return {"videos": result["videos"]}
+    else:
+        raise HTTPException(status_code=500, detail=result["message"])
