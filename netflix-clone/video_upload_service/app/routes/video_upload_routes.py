@@ -95,7 +95,7 @@ async def complete_upload(payload: CompleteUploadRequest, db: AsyncSession = Dep
 
 
 # route to update video record
-@router.post("/internal/update-video-status", dependencies=[Depends(verify_internal_api)])
+@router.post("/internal/post-transcode-update", dependencies=[Depends(verify_internal_api)])
 async def update_video_record_API(payload: Update_Video_Record, db: AsyncSession = Depends(get_async_db)):
     update_result = await update_video_record(payload.video_id, payload.hls_path, payload.upload_status, db)
     if update_result["success"]:

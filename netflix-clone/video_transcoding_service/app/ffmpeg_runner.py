@@ -126,6 +126,8 @@ def transcode_video(video_id: str, file_key: str):
 
 
 
+
+
 def notify_upload_service(video_id: str, hls_path: str):
     """
     Notifies the video_upload_service that transcoding is complete
@@ -134,7 +136,7 @@ def notify_upload_service(video_id: str, hls_path: str):
 
     upload_service_url = os.getenv(
         "VIDEO_UPLOAD_INTERNAL_URL",
-        "http://video_upload_service:8000/internal/update-video-status"
+        "http://video_upload:8002/videos/internal/post-transcode-update"
     )
     internal_api_key = os.getenv("INTERNAL_API_KEY")
 
@@ -144,11 +146,12 @@ def notify_upload_service(video_id: str, hls_path: str):
 
     payload = {
         "video_id": video_id,
-        "hls_path": hls_path
+        "hls_path": hls_path,
+        "upload_status" : 2
     }
 
     headers = {
-        "x-internal-key": internal_api_key,
+        "x-internal-api-key": internal_api_key,
         "Content-Type": "application/json"
     }
 
@@ -164,3 +167,5 @@ def notify_upload_service(video_id: str, hls_path: str):
 
     except requests.exceptions.RequestException as e:
         logger.error(f"[{video_id}] Internal API call failed: {e}")
+
+
