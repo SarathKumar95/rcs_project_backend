@@ -3,8 +3,7 @@
 from typing import Optional
 from app.models.videos import Video, UploadStatusEnum
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import get_async_db
-from sqlalchemy import select
+
 
 
 from app.schemas.video_upload import VideoCreate
@@ -68,7 +67,7 @@ async def list_videos(db: AsyncSession, user_id: Optional[int] = None):
         return {"success": False, "videos": [], "message": str(e)}
 
 
-# update video details
+# update video status
 
 async def update_video_status(video_id: int, status: str, db: AsyncSession):
     try:
@@ -87,6 +86,26 @@ async def update_video_status(video_id: int, status: str, db: AsyncSession):
         print(f"Error updating status: {e}")
         return {"success": False, "video": None, "message": str(e)}
     
+
+# update video with hls_path, upload_status
+async def update_video_record(video_id: int, hls_path: str, upload_status: str, db: AsyncSession):
+    try:
+        video = await db.get(Video, video_id)
+        if not video:
+            return {"success": False, "message": "Video not found"}
+
+        video.hls_path = hls_path
+        video.upload_status = upload_status
+
+        await db.commit()
+        await db.refresh(video)
+
+        return {"success": True, "message": "Video status updated successfully", "video": video}
+
+    except Exception as e:
+        await db.rollback()
+        print(f"Error updating video status: {e}")
+        return {"success": False, "message": str(e)}
 
 # delete video
 async def delete_video(video_id: int, db: AsyncSession):

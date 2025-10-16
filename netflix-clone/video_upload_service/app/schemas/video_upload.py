@@ -38,3 +38,13 @@ class Post_Transcode_Update(BaseModel):
         orm_mode = True
 
 
+class Update_Video_Record(BaseModel):
+    video_id: str
+    # title: Optional[str] = None 
+    # description: Optional[str] = None 
+    hls_path: Optional[str] = None
+    upload_status: Optional[int] = None 
+    # resolutions: Optional[Dict[str, str]] = None 
+
+    class Config:
+        orm_mode = True

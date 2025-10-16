@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException, Depends
+import os
+from fastapi import APIRouter, HTTPException, Depends, Header
 from app.deps.s3_client import (
     initiate_multipart_upload,
     get_presigned_part_url,
     complete_multipart_upload
 )
 from app.schemas.video_upload import *
-from app.utility.videos_db import create_video, update_video_status
+from app.utility.videos_db import create_video, update_video_record
 from app.db.session import get_async_db
 from app.deps.s3_client import BUCKET_NAME
 
@@ -16,6 +17,15 @@ from core.redis_stream import RedisStreamClient
 redis_client = RedisStreamClient()
 
 router = APIRouter()
+
+
+INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY")
+
+async def verify_internal_api(x_internal_api_key: str = Header(...)):
+    if x_internal_api_key != INTERNAL_API_KEY:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+
 
 @router.post("/initiate-upload")
 async def initiate_upload(payload: InitiateUploadRequest):
@@ -84,10 +94,15 @@ async def complete_upload(payload: CompleteUploadRequest, db: AsyncSession = Dep
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# @router.put("/{video_id}/status")
-# async def update_status(payload : VideoUpdate, db: AsyncSession = Depends(get_async_db)):
-#     """
-#     Update the status of a video (e.g., 'processing', 'ready', 'failed').
-#     """
-#     result = await update_video_status(video_id, status, db)
-#     return result
+# route to update video record
+@router.post("/internal/update-video-status", dependencies=[Depends(verify_internal_api)])
+async def update_video_record_API(payload: Update_Video_Record, db: AsyncSession = Depends(get_async_db)):
+    update_result = await update_video_record(payload.video_id, payload.hls_path, payload.upload_status, db)
+    if update_result["success"]:
+
+        # log the video update
+        print(f"Updated video ID {payload.video_id} with hls_path: {payload.hls_path} and upload_status: {payload.upload_status}")
+
+        return {"message": "Video status updated successfully"}
+    else:
+        raise HTTPException(status_code=404, detail=update_result["message"])
