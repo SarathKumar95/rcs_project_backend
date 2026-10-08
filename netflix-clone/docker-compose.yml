@@ -65,7 +65,7 @@ services:
       - REDIS_PORT=6379
 
   minio:
-    image: minio/minio
+    image: chainguard/minio
     container_name: minio
     ports:
       - "${MINIO_SERVICE}:9000"  # API
@@ -136,4 +136,4 @@ services:
 volumes:
   user_data:
   redis_data:
-
+  minio_data:

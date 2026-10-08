@@ -45,7 +45,7 @@ def transcode_video(video_id: str, file_key: str):
     """
 
     try:
-        logger.info(f"[{video_id}] 🎬 Starting transcoding for: {file_key}")
+        logger.info(f"[{video_id}] Starting transcoding for: {file_key}")
 
         # Step 1️: Prepare local temp directories
         local_video_path = f"/tmp/{os.path.basename(file_key)}"
@@ -109,7 +109,7 @@ def transcode_video(video_id: str, file_key: str):
         # })
         # logger.info(f"[{video_id}] Published 'video_transcoded' event for {hls_path}")
 
-        # Step 5️⃣: Notify video_upload_service via internal API
+        # Step 5️: Notify video_upload_service via internal API
         hls_path = f"hls/{video_id}/master.m3u8"
         notify_upload_service(video_id, hls_path)
         logger.info(f"[{video_id}] Notified upload service of transcoding completion.")
