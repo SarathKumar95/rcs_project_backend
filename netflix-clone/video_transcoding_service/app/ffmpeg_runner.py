@@ -197,13 +197,15 @@ def transcode_video(video_id: str, file_key: str):
     to notify that transcoding is complete.
     """
 
+    # Step 1️: Prepare local temp directories
+    local_video_path = f"/tmp/{os.path.basename(file_key)}"
+    output_dir = f"/tmp/hls/{video_id}"
+    os.makedirs(output_dir, exist_ok=True)
+
     try:
         logger.info(f"[{video_id}] Starting transcoding for: {file_key}")
 
-        # Step 1️: Prepare local temp directories
-        local_video_path = f"/tmp/{os.path.basename(file_key)}"
-        output_dir = f"/tmp/hls/{video_id}"
-        os.makedirs(output_dir, exist_ok=True)
+
 
         # Step 2️: Download the source video from MinIO
         logger.info(f"[{video_id}] Downloading {file_key} from {BUCKET_NAME} ...")
