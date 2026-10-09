@@ -1,12 +1,16 @@
 # s3_client.py (under app/deps/)
-import boto3
 import os
-from urllib.parse import urlparse, urlunparse
-
+import boto3
+from botocore.exceptions import ClientError
+from core.logger import get_logger
 
 MINIO_INTERNAL_ENDPOINT = os.getenv("MINIO_ENDPOINT")
 MINIO_PUBLIC_ENDPOINT = os.getenv("MINIO_PUBLIC_URL")
 BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME")
+
+
+
+logger = get_logger("s3_client")
 
 s3 = boto3.client(
     "s3",
@@ -27,6 +31,24 @@ internal_s3 = boto3.client(
 )
 
 BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME")
+
+
+def ensure_bucket_exists():
+    if not BUCKET_NAME:
+        logger.error("MINIO_BUCKET_NAME is not configured")
+        raise RuntimeError("MINIO_BUCKET_NAME is not configured")
+
+    try:
+        internal_s3.head_bucket(Bucket=BUCKET_NAME)
+    except ClientError as exc:
+        error_code = exc.response.get("Error", {}).get("Code")
+
+        if error_code in ("404", "NoSuchBucket", "NotFound"):
+            logger.info(f"Bucket '{BUCKET_NAME}' does not exist. Creating it...")
+            internal_s3.create_bucket(Bucket=BUCKET_NAME)
+            logger.info(f"Bucket '{BUCKET_NAME}' created successfully.")
+        else:
+            raise
 
 def initiate_multipart_upload(key: str):
     response = internal_s3.create_multipart_upload(Bucket=BUCKET_NAME, Key=key)

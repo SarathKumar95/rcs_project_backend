@@ -71,7 +71,7 @@ services:
       - "${MINIO_SERVICE}:9000"  # API
       - "${MINIO_CONSOLE}:9001"  # Console
     volumes:
-      - ./minio-data:/data
+      - minio_data:/data
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     environment:
@@ -100,7 +100,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME}
       AWS_REGION : ${AWS_REGION}
-      SYNC_DATABASE_URL : postgresql+psycopg2://${PSQL_USER}:${PSQL_PASSWORD}@db:5432/${VIDEOS_DB}
+      SYNC_DATABASE_URL : postgresql+asyncpg://${PSQL_USER}:${PSQL_PASSWORD}@db:5432/${VIDEOS_DB}
       REDIS_HOST : ${REDIS_HOST}
       REDIS_PORT : ${REDIS_PORT}
       INTERNAL_API_KEY : ${INTERNAL_API_KEY}

@@ -1,10 +1,11 @@
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 from typing import AsyncGenerator
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.orm import declarative_base
 
 
-DATABASE_URL = os.environ["VIDEO_DATABASE_URL"]  # assume Docker is setting this
+
+DATABASE_URL = os.environ["SYNC_DATABASE_URL"]  # assume Docker is setting this
 
 engine =  create_async_engine(DATABASE_URL, echo=True)
 # Create async session factory
@@ -16,9 +17,6 @@ AsyncSessionLocal = async_sessionmaker(
 
 Base = declarative_base()
 
-
-# Asynchronous DB dependency
-from sqlalchemy.ext.asyncio import AsyncSession
 
 async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:

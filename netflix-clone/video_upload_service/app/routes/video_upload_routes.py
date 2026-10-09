@@ -11,7 +11,7 @@ from app.db.session import get_async_db
 from app.deps.s3_client import BUCKET_NAME
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from core.redis_stream import RedisStreamClient\
+from core.redis_stream import RedisStreamClient
 from app.utility.videos_db import list_videos
 
 
