@@ -1,21 +1,31 @@
+import time
 from app.redis_listener import listen_for_videos
 from core.logger import get_logger
-import time
+from core.redis_stream import redis_client
+
 
 
 logger = get_logger("video_transcoding")
 
 def start_worker():
-    logger.info("Transcoding worker started, listening for Redis events...")
+    logger.info("Transcoding worker started, checking if redis connection is active ...")
+
+    try:
+        redis_active = redis_client.check_connection()
+
+        if redis_active:
+            
+
+
     while True:
         try:
             listen_for_videos()
-            time.sleep(1)
+            # time.sleep(1) 
         except KeyboardInterrupt:
             logger.warning(" Worker stopped manually.")
             break
         except Exception as e:
-            logger.error(f" Worker error: {e}")
+            logger.exception(f" Worker error: {e}")
             time.sleep(2)
 
 

@@ -1,7 +1,10 @@
 import os
 import redis
-import json
-from typing import Dict, Optional
+from typing import Dict
+from redis.exceptions import ResponseError
+from core.logger import get_logger
+
+logger = get_logger("redis_stream")
 
 
 class RedisStreamClient:
@@ -18,21 +21,92 @@ class RedisStreamClient:
             self.client = redis.Redis(host=self.host, port=self.port, decode_responses=True)
 
 
+    def check_connection(self) -> None:
+        try:
+            self.client.ping()
+            logger.info("Redis connection successful")
+        except redis.exceptions.RedisError:
+            logger.exception("Unable to connect to Redis")
+            raise
+
+    def ensure_consumer_group(self, group_name: str) -> None:
+        try:
+            self.client.xgroup_create(
+                name=self.stream_name,
+                groupname=group_name,
+                id="0-0",
+                mkstream=True,
+            )
+
+            logger.info(
+                "Created Redis consumer group: %s",
+                group_name,
+            )
+
+        except ResponseError as exc:
+            if "BUSYGROUP" in str(exc):
+                logger.info(
+                    "Redis consumer group already exists: %s",
+                    group_name,
+                )
+                return
+
+            logger.exception(
+                "Failed to create Redis consumer group: %s",
+                group_name,
+            )
+            raise
+
+
     # ---- PRODUCER ----
     def publish(self, data: Dict) -> str:
         """Publish an event to Redis stream"""
         message_id = self.client.xadd(self.stream_name, data)
-        print(f"[RedisStream] Published event: {message_id} -> {data}")
+        logger.info("Published Redis event: stream=%s, message_id=%s",self.stream_name,message_id,)
         return message_id
 
     # ---- CONSUMER ----
-    def listen(self, block_ms: int = 5000) -> Optional[Dict]:
-        """Listen for new events (simple non-group consumer)"""
-        events = self.client.xread({self.stream_name: "$"}, block=block_ms, count=1)
+    def listen(
+        self,
+        group_name: str,
+        consumer_name: str,
+        block_ms: int = 5000,
+    ):
+        events = self.client.xreadgroup(
+            groupname=group_name,
+            consumername=consumer_name,
+            streams={self.stream_name: ">"},
+            count=1,
+            block=block_ms,
+        )
+
         if not events:
+            logger.debug("No events received from Redis stream: %s", self.stream_name)
             return None
 
-        # Redis returns [(stream, [(id, {key: value})])]
         _, messages = events[0]
         message_id, data = messages[0]
-        return {"id": message_id, "data": data}
+
+        return {
+            "id": message_id,
+            "data": data,
+        }
+
+
+    def acknowledge(self, group_name: str, message_id: str) -> int:
+
+        # Acknowledge the message in the Redis stream
+        logger.info(
+            "Acknowledging Redis event: stream=%s, group=%s, message_id=%s",
+            self.stream_name,
+            group_name,
+            message_id,
+        )
+
+        return self.client.xack(
+            self.stream_name,
+            group_name,
+            message_id,
+        )
+
+redis_client = RedisStreamClient(stream_name="video_events")
