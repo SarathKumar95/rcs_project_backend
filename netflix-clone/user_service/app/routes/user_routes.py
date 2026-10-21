@@ -40,12 +40,33 @@ async def register(
         logger.error(f"DB Error during registration: {str(e)}")
         raise HTTPException(status_code=500, detail="Registration failed. Please try again later.")
 
-    access_token = create_access_token(new_user)
-    set_auth_cookies(response, access_token)
+    # access_token = create_access_token(new_user)
+    # set_auth_cookies(response, access_token)
+    
+    # 3. Generate the token separately
+    try:
+        access_token = create_access_token(new_user)
+        set_auth_cookies(response, access_token)
 
-    return {"message": "Success"}
+    except Exception:
+        logger.exception(
+            "Account created, but automatic login failed"
+        )
 
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "account_created": True,
+                "authenticated": False,
+                "message": (
+                    "Your account was created, but automatic "
+                    "sign-in failed. Please try signing in."
+                ),
+            },
+        )
 
+    # 4. Both operations succeeded
+    return {"message": "Account created and signed in", "user" : {"id": new_user.id, "email": new_user.email, "role": new_user.role_name}}
 
 @router.get("/",response_model=UserOut)
 async def get_current_user(request: Request, db: AsyncSession = Depends(get_async_db)):

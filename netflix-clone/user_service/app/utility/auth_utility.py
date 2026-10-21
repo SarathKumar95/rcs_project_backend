@@ -40,7 +40,7 @@ def set_auth_cookies(response: Response, access_token: str):
         httponly=True,
         secure=True,            # Set to False only in dev
         samesite="Lax",
-        max_age=60 * 60 * 24 * 7  # 7 days
+        max_age=60 * 30
     )
 
 
