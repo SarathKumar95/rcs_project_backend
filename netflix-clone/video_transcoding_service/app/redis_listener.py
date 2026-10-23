@@ -14,6 +14,46 @@ def initialize_consumer_group():
     redis_client.ensure_consumer_group(CONSUMER_GROUP)
 
 
+def process_message(message):
+    message_id = message["id"]
+    data = message["data"]
+
+    if data.get("event") != "video_uploaded":
+        logger.error(
+            "Unsupported event type: %s",
+            data.get("event"),
+        )
+        return
+
+    video_id = data["video_id"]
+    file_key = data["key"]
+
+    logger.info(
+        "[%s] Starting transcoding for %s",
+        video_id,
+        file_key,
+    )
+
+    # If this raises an exception, do not acknowledge the message.
+    transcode_video(video_id, file_key)
+
+    acknowledged = redis_client.acknowledge(
+        group_name=CONSUMER_GROUP,
+        message_id=message_id,
+    )
+
+    if acknowledged != 1:
+        raise RuntimeError(
+            f"Failed to acknowledge Redis message {message_id}"
+        )
+
+    logger.info(
+        "[%s] Transcoding completed and message acknowledged",
+        video_id,
+    )
+
+
+
 def listen_for_videos():
     message = redis_client.listen(
         group_name=CONSUMER_GROUP,
@@ -22,56 +62,12 @@ def listen_for_videos():
     )
 
     if message is None:
+        logger.debug("No new messages received from Redis stream")
         return
 
-    message_id = message["id"]
-    data = message["data"]
-
-    logger.info("Received Redis message %s: %s", message_id, data)
-
-    event_type = data.get("event")
-
-    if event_type != "video_uploaded":
-        logger.warning(
-            "Unsupported event type %r; message %s remains pending",
-            event_type,
-            message_id,
-        )
-        return
-
-    # Missing required fields will raise an exception.
-    video_id = data["video_id"]
-    file_path = data["key"]
-
     logger.info(
-        "[%s] Starting transcoding for file: %s",
-        video_id,
-        file_path,
+        "Received Redis message %s",
+        message["id"],
     )
 
-    # If this raises an exception, XACK is not executed.
-    transcode_video(video_id, file_path)
-
-    # Acknowledge only after processing returns successfully.
-    acknowledged = redis_client.acknowledge(
-        group_name=CONSUMER_GROUP,
-        message_id=message_id,
-    )
-
-    if acknowledged != 1:
-        logger.error(
-            "[%s] Failed to acknowledge message %s; XACK result: %s",
-            video_id,
-            message_id,
-            acknowledged,
-        )
-
-        raise RuntimeError(
-            f"[{video_id}] Failed to acknowledge message {message_id}; XACK result: {acknowledged}"
-        )
-
-    logger.info(
-        "[%s] Transcoding completed; XACK result: %s",
-        video_id,
-        acknowledged,
-    )
+    process_message(message)

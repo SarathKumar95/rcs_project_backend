@@ -109,4 +109,35 @@ class RedisStreamClient:
             message_id,
         )
 
+    def claim_pending(
+    self,
+    group_name: str,
+    consumer_name: str,
+    min_idle_time_ms: int = 300_000,
+    start_id: str = "0-0",
+    count: int = 10,
+    ):
+        result = self.client.xautoclaim(
+            name=self.stream_name,
+            groupname=group_name,
+            consumername=consumer_name,
+            min_idle_time=min_idle_time_ms,
+            start_id=start_id,
+            count=count,
+        )
+
+
+        logger.info(
+            "XAUTOCLAIM requested_count=%d, actual_count=%d",
+            count,
+            len(messages),
+        )
+
+        next_cursor, messages = result[0], result[1]
+
+        return next_cursor, [
+            {"id": message_id, "data": data}
+            for message_id, data in messages
+        ]
+
 redis_client = RedisStreamClient(stream_name="video_events")
