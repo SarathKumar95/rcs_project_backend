@@ -126,6 +126,8 @@ class RedisStreamClient:
             count=count,
         )
 
+        next_cursor, messages = result[0], result[1]
+
 
         logger.info(
             "XAUTOCLAIM requested_count=%d, actual_count=%d",
@@ -133,8 +135,7 @@ class RedisStreamClient:
             len(messages),
         )
 
-        next_cursor, messages = result[0], result[1]
-
+   
         return next_cursor, [
             {"id": message_id, "data": data}
             for message_id, data in messages

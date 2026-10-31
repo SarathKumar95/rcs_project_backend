@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class InitiateUploadRequest(BaseModel):
@@ -17,10 +17,13 @@ class Part(BaseModel):
     PartNumber: int
 
 class CompleteUploadRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
     key: str
     upload_id: str
     parts: List[Part]
     created_by : int
+    title: str = Field(min_length=1, max_length=200)
+    description: str = Field(max_length=2000)
 
 class VideoCreate(BaseModel):
     title: str

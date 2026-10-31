@@ -57,8 +57,8 @@ async def complete_upload(payload: CompleteUploadRequest, db: AsyncSession = Dep
         # create a new video entry in the database
         new_video_entry = await create_video(
             VideoCreate(
-                title=payload.key.split('/')[-1],  # use filename as title
-                description="",
+                title=payload.title,  # use filename as title
+                description=payload.description,
                 file_path=f"{BUCKET_NAME}/{payload.key}",
                 created_by=payload.created_by
             ),
