@@ -21,7 +21,6 @@ class CompleteUploadRequest(BaseModel):
     key: str
     upload_id: str
     parts: List[Part]
-    created_by : int
     title: str = Field(min_length=1, max_length=200)
     description: str = Field(max_length=2000)
 

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.routes import user_routes
 from app.routes import auth_routes
+from app.routes import internal_auth_routes
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -19,3 +20,8 @@ app.add_middleware(
 # Include your user routes (register/login)
 app.include_router(user_routes.router, prefix="/users", tags=["users"])
 app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
+app.include_router(
+    internal_auth_routes.router,
+    prefix="/internal/auth",
+    tags=["internal-auth"],
+)

@@ -9,6 +9,7 @@ from app.schemas.video_upload import *
 from app.utility.videos_db import create_video, update_video_record
 from app.db.session import get_async_db
 from app.deps.s3_client import BUCKET_NAME
+from app.deps.auth import AuthenticatedUser, require_admin, require_authenticated_user
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.redis_stream import RedisStreamClient
@@ -28,14 +29,14 @@ async def verify_internal_api(x_internal_api_key: str = Header(...)):
 
 
 
-@router.post("/initiate-upload")
+@router.post("/initiate-upload", dependencies=[Depends(require_admin)])
 async def initiate_upload(payload: InitiateUploadRequest):
     key = f"uploads/{payload.filename}"
     upload_id = initiate_multipart_upload(key)
     return {"upload_id": upload_id, "key": key}
 
 
-@router.post("/get-upload-url")
+@router.post("/get-upload-url", dependencies=[Depends(require_admin)])
 async def get_upload_url(payload: GetUploadUrlRequest):
     url = get_presigned_part_url(
         payload.key,
@@ -46,7 +47,11 @@ async def get_upload_url(payload: GetUploadUrlRequest):
 
 
 @router.post("/complete-upload")
-async def complete_upload(payload: CompleteUploadRequest, db: AsyncSession = Depends(get_async_db)):
+async def complete_upload(
+    payload: CompleteUploadRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    db: AsyncSession = Depends(get_async_db),
+):
     try:
         result = complete_multipart_upload(
             payload.key,
@@ -60,7 +65,7 @@ async def complete_upload(payload: CompleteUploadRequest, db: AsyncSession = Dep
                 title=payload.title,  # use filename as title
                 description=payload.description,
                 file_path=f"{BUCKET_NAME}/{payload.key}",
-                created_by=payload.created_by
+                created_by=user.id
             ),
             db 
         )
@@ -109,7 +114,11 @@ async def update_video_record_API(payload: Update_Video_Record, db: AsyncSession
         raise HTTPException(status_code=404, detail=update_result["message"])
     
 
-@router.get("/", summary="List all videos in the database")
+@router.get(
+    "/",
+    summary="List all videos in the database",
+    dependencies=[Depends(require_authenticated_user)],
+)
 async def get_all_videos(db: AsyncSession = Depends(get_async_db)):
     
     result = await list_videos(db)
