@@ -15,7 +15,9 @@ services:
       - video_upload
 
   user_service:
-    build: ./user_service
+    build:
+      context: .
+      dockerfile: ./user_service/Dockerfile
     env_file:
       - .env
     # ports:
@@ -84,7 +86,8 @@ services:
   
   video_upload:
     build:
-      context: ./video_upload_service
+      context: .
+      dockerfile: ./video_upload_service/Dockerfile
     env_file:
       - .env
     working_dir: /app/video_upload_service

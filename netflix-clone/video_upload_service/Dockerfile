@@ -2,7 +2,7 @@
 FROM python:3.9-slim
 
 # Set work directory
-WORKDIR /app
+WORKDIR /app/video_upload_service
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -10,12 +10,15 @@ RUN apt-get update && apt-get install -y \
     apt-get clean
 
 # Copy dependency file and install
-COPY requirements.txt .
+COPY video_upload_service/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy your FastAPI app
-COPY ./app ./app
+# Copy the service and shared project code
+COPY video_upload_service/app ./app
+COPY core /app/core
+
+ENV PYTHONPATH=/app
 
 # Set environment variables (if needed)
 ENV PYTHONUNBUFFERED=1

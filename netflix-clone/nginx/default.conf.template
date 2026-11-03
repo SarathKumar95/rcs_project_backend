@@ -6,6 +6,16 @@ map $http_origin $cors_origin {
 server {
     listen 80;
 
+    proxy_hide_header Access-Control-Allow-Origin;
+    proxy_hide_header Access-Control-Allow-Credentials;
+    proxy_hide_header Access-Control-Allow-Methods;
+    proxy_hide_header Access-Control-Allow-Headers;
+    add_header Access-Control-Allow-Origin $cors_origin always;
+    add_header Access-Control-Allow-Credentials "true" always;
+    add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+    add_header Access-Control-Allow-Headers "Accept, Content-Type" always;
+    add_header Vary Origin always;
+
     location = /_internal/auth {
         internal;
         proxy_pass http://user_service:8000/internal/auth/check;
@@ -15,7 +25,13 @@ server {
         proxy_set_header Host $host;
     }
 
-    location /users/ {
+    location = /users/ {
+        if ($request_method = GET) {
+            rewrite ^ /_internal/users/current last;
+        }
+        limit_except GET POST OPTIONS {
+            deny all;
+        }
         proxy_pass http://user_service:8000/users/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -26,8 +42,38 @@ server {
         proxy_buffering off;
     }
 
-    location /auth/ {
-        proxy_pass http://user_service:8000/auth/;
+    location = /_internal/users/current {
+        internal;
+        auth_request /_internal/auth;
+        proxy_pass http://user_service:8000/users/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Connection "";
+        proxy_pass_request_headers on;
+        proxy_buffering off;
+    }
+
+    location = /auth/login {
+        limit_except POST OPTIONS {
+            deny all;
+        }
+        proxy_pass http://user_service:8000/auth/login;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Connection "";
+        proxy_pass_request_headers on;
+        proxy_buffering off;
+    }
+
+    location = /auth/logout {
+        limit_except POST OPTIONS {
+            deny all;
+        }
+        proxy_pass http://user_service:8000/auth/logout;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -69,15 +115,6 @@ server {
         proxy_pass_request_headers on;
         proxy_buffering off;
 
-        proxy_hide_header Access-Control-Allow-Origin;
-        proxy_hide_header Access-Control-Allow-Credentials;
-        proxy_hide_header Access-Control-Allow-Methods;
-        proxy_hide_header Access-Control-Allow-Headers;
-        add_header Access-Control-Allow-Origin $cors_origin always;
-        add_header Access-Control-Allow-Credentials "true" always;
-        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
-        add_header Access-Control-Allow-Headers "Content-Type" always;
-        add_header Vary Origin always;
     }
 
 }

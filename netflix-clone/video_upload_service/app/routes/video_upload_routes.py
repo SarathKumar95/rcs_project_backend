@@ -9,7 +9,8 @@ from app.schemas.video_upload import *
 from app.utility.videos_db import create_video, update_video_record
 from app.db.session import get_async_db
 from app.deps.s3_client import BUCKET_NAME
-from app.deps.auth import AuthenticatedUser, require_admin, require_authenticated_user
+from core.auth.dependencies import require_admin, require_authenticated_user
+from core.auth.identity import AuthenticatedUser
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.redis_stream import RedisStreamClient

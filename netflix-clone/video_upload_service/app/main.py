@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.routes.video_upload_routes import router as video_upload_router
+from core.middleware.authentication import AuthenticationMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
 from contextlib import asynccontextmanager
@@ -14,13 +15,19 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan, title="Video Upload Service", version="1.0.0")
 
 app.add_middleware(
+    AuthenticationMiddleware,
+    excluded_routes={
+        ("/videos/internal/post-transcode-update", "POST"),
+    },
+)
+
+app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 
 app.include_router(video_upload_router, prefix="/videos")
