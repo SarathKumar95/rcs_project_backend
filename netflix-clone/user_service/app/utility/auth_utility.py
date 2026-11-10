@@ -4,6 +4,9 @@ from app.models.user import User
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
+from core.logger import get_logger
+
+logger = get_logger("auth_utility")
 
 
 
@@ -34,15 +37,20 @@ def create_access_token(user: User, expires_delta: timedelta = timedelta(minutes
 
 
 def set_auth_cookies(response: Response, access_token: str):
+
+    is_production = os.getenv("ENVIRONMENT") == "production"
+
+    logger.info(f"Setting auth cookies. Production: {is_production}")
+
+
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,            # Set to False only in dev
-        samesite="Lax",
-        max_age=60 * 30
+        secure=is_production,
+        samesite="lax",
+        path="/",
     )
-
 
 def extract_token_from_cookie(request: Request) -> str:
     token = request.cookies.get("access_token")
