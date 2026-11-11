@@ -139,8 +139,19 @@ services:
     depends_on:
       - redis
 
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY}
+    ports:
+      - "127.0.0.1:6333:6333"
+
 
 volumes:
   user_data:
   redis_data:
   minio_data:
+  qdrant_data:
