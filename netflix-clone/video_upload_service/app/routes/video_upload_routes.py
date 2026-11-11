@@ -1,5 +1,9 @@
 import os
 from fastapi import APIRouter, HTTPException, Depends, Header
+from uuid import UUID
+from fastapi.responses import StreamingResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.deps.s3_client import (
     initiate_multipart_upload,
     get_presigned_part_url,
@@ -12,9 +16,14 @@ from app.deps.s3_client import BUCKET_NAME
 from core.auth.dependencies import require_admin, require_authenticated_user
 from core.auth.identity import AuthenticatedUser
 
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from core.redis_stream import RedisStreamClient
 from app.utility.videos_db import list_videos
+
+
+from app.utility.videos_db import list_videos, get_video_by_id
+from app.utility.video_playback import get_hls_object
+from botocore.exceptions import ClientError
 
 
 redis_client = RedisStreamClient()
@@ -115,6 +124,9 @@ async def update_video_record_API(payload: Update_Video_Record, db: AsyncSession
         raise HTTPException(status_code=404, detail=update_result["message"])
     
 
+
+# will eventually move to another service, but for now, we can keep it here for testing purposes
+
 @router.get(
     "/",
     summary="List all videos in the database",
@@ -127,3 +139,74 @@ async def get_all_videos(db: AsyncSession = Depends(get_async_db)):
         return {"videos": result["videos"]}
     else:
         raise HTTPException(status_code=500, detail=result["message"])
+
+
+
+@router.get(
+    "/{video_id}/stream/{file_path:path}",
+    summary="Stream an HLS playlist or segment",
+)
+async def stream_video(
+    video_id: UUID,
+    file_path: str,
+    db: AsyncSession = Depends(get_async_db),
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+):
+    """
+    Serves HLS files stored in MinIO.
+
+    The master playlist, variant playlists, and media segments all use this
+    route. Relative paths inside the HLS playlists resolve under the same
+    /stream/ URL, so the playlists do not need to be rewritten.
+    """
+    video_result = await get_video_by_id(video_id, db)
+    if not video_result["success"]:
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    video = video_result["video"]
+
+    if video.is_deleted:
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    if video.upload_status != 2 or not video.hls_path:
+        raise HTTPException(status_code=409, detail="Video is not ready for playback")
+
+    try:
+        object_response = get_hls_object(video.hls_path, file_path)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="HLS file not found")
+    except ClientError:
+        raise HTTPException(status_code=502, detail="Unable to retrieve video content")
+
+    filename = file_path.rsplit("/", 1)[-1].lower()
+    if filename.endswith(".m3u8"):
+        media_type = "application/vnd.apple.mpegurl"
+    elif filename.endswith(".ts"):
+        media_type = "video/mp2t"
+    elif filename.endswith(".mp4"):
+        media_type = "video/mp4"
+    else:
+        media_type = "application/octet-stream"
+
+    body = object_response["Body"]
+
+    def stream_chunks():
+        try:
+            for chunk in body.iter_chunks(chunk_size=1024 * 1024):
+                if chunk:
+                    yield chunk
+        finally:
+            body.close()
+
+    headers = {"Cache-Control": "private, max-age=60"}
+    content_length = object_response.get("ContentLength")
+    if content_length is not None:
+        headers["Content-Length"] = str(content_length)
+
+    return StreamingResponse(
+        stream_chunks(),
+        media_type=media_type,
+        headers=headers,
+    )
