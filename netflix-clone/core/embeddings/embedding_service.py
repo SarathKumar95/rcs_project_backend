@@ -1,8 +1,8 @@
 from functools import lru_cache
 from typing import List, Optional
 
-from .base import EmbeddingProvider
-from .gemini_provider import GeminiEmbeddingProvider
+from core.embeddings.base import EmbeddingProvider
+from core.embeddings.gemini_provider import GeminiEmbeddingProvider
 
 
 class EmbeddingService:
